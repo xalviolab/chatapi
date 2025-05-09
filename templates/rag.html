@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medikal RAG Sistemi - AI Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .menu-item.active {
+            background-color: #4a5568;
+            color: white;
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4a5568;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .user-details {
+            font-size: 14px;
+        }
+
+        .username {
+            font-weight: 600;
+        }
+
+        .tokens,
+        .plan {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Content Styles */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* RAG Container Styles */
+        .rag-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .rag-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .rag-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .rag-content {
+            display: flex;
+            height: calc(100% - 60px);
+            gap: 20px;
+        }
+
+        .rag-sidebar {
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .rag-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* PDF Upload Styles */
+        .pdf-upload {
+            margin-bottom: 20px;
+        }
+
+        .pdf-upload h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 10px 15px;
+            background-color: #4a5568;
+            color: white;
+            border-radius: 4px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+
+        .file-input-label:hover {
+            background-color: #2d3748;
+        }
+
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            padding: 10px 15px;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .upload-btn:hover {
+            background-color: #3182ce;
+        }
+
+        .upload-btn:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* PDF List Styles */
+        .pdf-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .pdf-list h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #edf2f7;
+            transition: background-color 0.3s;
+        }
+
+        .pdf-item:hover {
+            background-color: #f7fafc;
+        }
+
+        .pdf-icon {
+            color: #e53e3e;
+            margin-right: 10px;
+        }
+
+        .pdf-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Chat Styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .user .message-content {
+            background-color: #4299e1;
+            color: white;
+        }
+
+        .ai .message-content {
+            background-color: #edf2f7;
+        }
+
+        .sources {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #718096;
+        }
+
+        .source-item {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .chat-input input:focus {
+            border-color: #4299e1;
+        }
+
+        .send-btn {
+            padding: 10px 20px;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .send-btn:hover {
+            background-color: #3182ce;
+        }
+
+        .send-btn:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .welcome-message h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .welcome-message p {
+            color: #718096;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background-color: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .alert-error {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+
+            .sidebar-menu {
+                display: flex;
+                padding: 10px;
+            }
+
+            .menu-item {
+                padding: 10px;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .rag-content {
+                flex-direction: column;
+            }
+
+            .rag-sidebar {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>AI Chat</h2>
+            </div>
+            <div class="sidebar-menu">
+                <a href="/" class="menu-item">
+                    <i class="fas fa-comment"></i>
+                    <span>Chat</span>
+                </a>
+                <a href="/rag" class="menu-item active">
+                    <i class="fas fa-book-medical"></i>
+                    <span>Medikal RAG</span>
+                </a>
+                <a href="/profile" class="menu-item">
+                    <i class="fas fa-user"></i>
+                    <span>Profil</span>
+                </a>
+                {% if user.is_admin %}
+                <a href="/admin" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Admin</span>
+                </a>
+                {% endif %}
+                <a href="/logout" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Çıkış</span>
+                </a>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <p class="username">{{ user.username }}</p>
+                        <p class="tokens">Tokens: <span id="tokens-count">{{ user.tokens_remaining }}</span></p>
+                        <p class="plan">Plan: {{ user.plan }}</p>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="content">
+            <div class="rag-container">
+                <div class="rag-header">
+                    <h2>Medikal RAG Sistemi</h2>
+                </div>
+
+                <div class="rag-content">
+                    <div class="rag-sidebar">
+                        <div class="pdf-upload">
+                            <h3>PDF Yükle</h3>
+                            <div id="upload-alert" class="alert" style="display: none;"></div>
+                            <form id="pdf-upload-form" class="upload-form">
+                                <div class="file-input-container">
+                                    <label class="file-input-label">
+                                        <i class="fas fa-file-pdf"></i> PDF Seç
+                                        <input type="file" id="pdf-file" class="file-input" accept=".pdf">
+                                    </label>
+                                </div>
+                                <div id="selected-file" style="margin-top: 5px; font-size: 14px;"></div>
+                                <button type="submit" id="upload-btn" class="upload-btn" disabled>
+                                    <span id="upload-btn-text">Yükle</span>
+                                    <span id="upload-loading" class="loading" style="display: none;"></span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="pdf-list">
+                            <h3>Yüklenen PDF'ler</h3>
+                            <div id="pdf-list-container">
+                                {% if pdfs %}
+                                {% for pdf in pdfs %}
+                                <div class="pdf-item">
+                                    <i class="fas fa-file-pdf pdf-icon"></i>
+                                    <span class="pdf-name">{{ pdf }}</span>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p>Henüz PDF yüklenmemiş.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rag-main">
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="welcome-message">
+                                    <h3>Medikal RAG Sistemine Hoş Geldiniz!</h3>
+                                    <p>Bu sistem, yüklediğiniz tıbbi PDF dokümanlarından bilgi çıkararak sorularınızı
+                                        yanıtlar. Önce sol panelden PDF yükleyin, ardından sorularınızı sorun.</p>
+                                </div>
+                            </div>
+
+                            <div class="chat-input">
+                                <input type="text" id="question-input" placeholder="Tıbbi bir soru sorun...">
+                                <button id="send-btn" class="send-btn">
+                                    <span id="send-btn-text">Gönder</span>
+                                    <span id="send-loading" class="loading" style="display: none;"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const pdfFileInput = document.getElementById('pdf-file');
+            const selectedFileDiv = document.getElementById('selected-file');
+            const uploadBtn = document.getElementById('upload-btn');
+            const uploadBtnText = document.getElementById('upload-btn-text');
+
+            // Sayfa yüklendiğinde vektör veritabanı durumunu kontrol et
+            checkVectorDBStatus();
+            // Mevcut PDF'leri listele
+            loadExistingPDFs();
+            const uploadLoading = document.getElementById('upload-loading');
+            const uploadForm = document.getElementById('pdf-upload-form');
+            const uploadAlert = document.getElementById('upload-alert');
+            const pdfListContainer = document.getElementById('pdf-list-container');
+            const questionInput = document.getElementById('question-input');
+            const sendBtn = document.getElementById('send-btn');
+            const sendBtnText = document.getElementById('send-btn-text');
+            const sendLoading = document.getElementById('send-loading');
+            const chatMessages = document.getElementById('chat-messages');
+            const tokensCount = document.getElementById('tokens-count');
+
+            // PDF dosyası seçildiğinde
+            pdfFileInput.addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    const fileName = this.files[0].name;
+                    selectedFileDiv.textContent = fileName;
+                    uploadBtn.disabled = false;
+                } else {
+                    selectedFileDiv.textContent = '';
+                    uploadBtn.disabled = true;
+                }
+            });
+
+            // PDF yükleme
+            uploadForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                if (!pdfFileInput.files.length) {
+                    showAlert('Lütfen bir PDF dosyası seçin.', 'error');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('pdf_file', pdfFileInput.files[0]);
+
+                // Yükleme başladı
+                uploadBtn.disabled = true;
+                uploadBtnText.style.display = 'none';
+                uploadLoading.style.display = 'inline-block';
+
+                fetch('/rag/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert(data.message, 'success');
+                            // PDF listesini güncelle
+                            const fileName = pdfFileInput.files[0].name;
+                            addPdfToList(fileName);
+                            // Formu sıfırla
+                            uploadForm.reset();
+                            selectedFileDiv.textContent = '';
+                        } else {
+                            showAlert(data.error, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showAlert('Bir hata oluştu: ' + error, 'error');
+                    })
+                    .finally(() => {
+                        // Yükleme tamamlandı
+                        uploadBtn.disabled = false;
+                        uploadBtnText.style.display = 'inline';
+                        uploadLoading.style.display = 'none';
+                    });
+            });
+
+            // Soru gönderme
+            sendBtn.addEventListener('click', sendQuestion);
+            questionInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendQuestion();
+                }
+            });
+
+            function sendQuestion() {
+                const question = questionInput.value.trim();
+
+                if (!question) {
+                    return;
+                }
+
+                // Kullanıcı mesajını ekle
+                addMessage(question, 'user');
+                questionInput.value = '';
+
+                // Gönderme başladı
+                sendBtn.disabled = true;
+                sendBtnText.style.display = 'none';
+                sendLoading.style.display = 'inline-block';
+
+                fetch('/rag/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: question })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // AI cevabını ekle
+                            addMessage(data.answer, 'ai', data.sources);
+                            // Token sayısını güncelle
+                            tokensCount.textContent = data.tokens_remaining;
+                        } else {
+                            showAlert(data.error, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showAlert('Bir hata oluştu: ' + error, 'error');
+                    })
+                    .finally(() => {
+                        // Gönderme tamamlandı
+                        sendBtn.disabled = false;
+                        sendBtnText.style.display = 'inline';
+                        sendLoading.style.display = 'none';
+                    });
+            }
+
+            // Mesaj ekleme fonksiyonu
+            function addMessage(content, type, sources = null) {
+                // Hoş geldiniz mesajını kaldır
+                const welcomeMessage = document.querySelector('.welcome-message');
+                if (welcomeMessage) {
+                    welcomeMessage.remove();
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = content;
+                messageDiv.appendChild(contentDiv);
+
+                // Kaynak bilgilerini ekle
+                if (sources && type === 'ai') {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'sources';
+                    sourcesDiv.innerHTML = '<strong>Kaynaklar:</strong> ';
+
+                    sources.forEach(source => {
+                        const sourceSpan = document.createElement('span');
+                        sourceSpan.className = 'source-item';
+                        sourceSpan.textContent = `${source.source} (Sayfa: ${source.page}, ${source.section})`;
+                        sourcesDiv.appendChild(sourceSpan);
+                    });
+
+                    messageDiv.appendChild(sourcesDiv);
+                }
+
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // PDF listesine yeni PDF ekleme
+            function addPdfToList(fileName) {
+                // "Henüz PDF yüklenmemiş" mesajını kaldır
+                if (pdfListContainer.querySelector('p')) {
+                    pdfListContainer.innerHTML = '';
+                }
+
+                const pdfItem = document.createElement('div');
+                pdfItem.className = 'pdf-item';
+                pdfItem.innerHTML = `
+                    <i class="fas fa-file-pdf pdf-icon"></i>
+                    <span class="pdf-name">${fileName}</span>
+                `;
+                pdfListContainer.appendChild(pdfItem);
+            }
+
+            // Uyarı gösterme fonksiyonu
+            function showAlert(message, type) {
+                uploadAlert.textContent = message;
+                uploadAlert.className = `alert alert-${type}`;
+                uploadAlert.style.display = 'block';
+
+                // 5 saniye sonra uyarıyı gizle
+                setTimeout(() => {
+                    uploadAlert.style.display = 'none';
+                }, 5000);
+            }
+
+            // Vektör veritabanı durumunu kontrol et
+            function checkVectorDBStatus() {
+                fetch('/rag/vector_db_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log(`Vektör veritabanında ${data.chunk_count} chunk bulunuyor.`);
+                            // Eğer chunk sayısı gösterilecek bir yer varsa burada güncellenebilir
+                        } else {
+                            console.error('Vektör veritabanı durumu alınamadı:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Vektör veritabanı durumu kontrol edilirken hata oluştu:', error);
+                    });
+            }
+
+            // Mevcut PDF'leri listele
+            function loadExistingPDFs() {
+                fetch('/rag/get_pdfs')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (data.pdfs && data.pdfs.length > 0) {
+                                // PDF listesini temizle
+                                pdfListContainer.innerHTML = '';
+
+                                // Her PDF için listeye ekle
+                                data.pdfs.forEach(fileName => {
+                                    addPdfToList(fileName);
+                                });
+                            } else {
+                                pdfListContainer.innerHTML = '<p>Henüz PDF yüklenmemiş.</p>';
+                            }
+                        } else {
+                            console.error('PDF listesi alınamadı:', data.error);
+                            pdfListContainer.innerHTML = '<p>PDF listesi yüklenemedi.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('PDF listesi alınırken hata oluştu:', error);
+                        pdfListContainer.innerHTML = '<p>PDF listesi yüklenemedi.</p>';
+                    });
+            }
+        });
+    </script>
+</body>
+
+</html>
